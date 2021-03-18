@@ -150,13 +150,56 @@ def aStarSearch(problem, heuristic=nullHeuristic):
     #COMP90054 Task 1, Implement your A Star search algorithm here
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    current = problem.getStartState()
+    pq = util.PriorityQueue()
+    pq.push((current, '', 0, []), 0)
+
+    # we will reuse bestG as the closed set as well to save on memory
+    bestG = dict()
+
+    while not pq.isEmpty():
+        state, action, cost, path = pq.pop()
+        
+        skip = state in bestG
+        if skip:
+            skip = cost >= bestG[state]
+        
+        if skip:
+            continue
+        
+        bestG[state] = cost
+
+        if problem.isGoalState(state):
+            path = path + [(state, action)]
+            break
+        
+        for succNode in problem.expand(state):
+            succState, succAction, succCost = succNode
+            newNode = (succState, succAction, cost + succCost, path + [(state, action)])
+            h = heuristic(succState, problem)
+            if h < float('inf'):
+                pq.push(newNode, cost + succCost + h)
+    
+    actions = [action[1] for action in path]
+    del actions[0]
+    return actions
+
+
+def rbfs(problem, node, fLimit):
+    state, action, cost, path
+    if problem.isGoalState(state):
+        pass
+    
+    
+    successors = []
+
+    
+
 
         
 def recursivebfs(problem, heuristic=nullHeuristic) :
-    #COMP90054 Task 2, Implement your Recursive Best First Search algorithm here
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    node = (problem.getStartState(), '', 0, [])
+    return rbfs(problem, node, float('inf'))
     
 
     
