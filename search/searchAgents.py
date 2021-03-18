@@ -563,8 +563,7 @@ def foodHeuristic(state, problem):
     position, foodGrid, capsules = state
     #COMP90054 Task 3, Implement your code here
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
-   
+    return 0
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
