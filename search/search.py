@@ -185,21 +185,51 @@ def aStarSearch(problem, heuristic=nullHeuristic):
     return actions
 
 
-def rbfs(problem, node, fLimit):
-    state, action, cost, path
+def rbfs(problem, node, fLimit, h):
+    state, action, cost, path = node
     if problem.isGoalState(state):
         pass
-    
-    
+
     successors = []
-
     
+    bestSuccs = util.PriorityQueue()
 
+
+    for succNode in problem.expand(state):
+        succState, succAction, succCost = succNode
+        f = max(cost + succCost, fLimit)
+        node = (succState, succAction, cost + succCost, path + [(state, action)], f)
+        successors.append(node)
+        if len(bestSuccs.heap) < 2:
+            bestSuccs.push(node, 1/f)
+        else:
+            item, score = bestSuccs.pop()
+            istate, iaction, icost, ipath, iscore = item
+            if iscore > f:
+                bestSuccs.push(node, 1/f)
+            else:
+                bestSuccs.push(item, 1/iscore)
+    
+    if len(successors) == 0:
+        return None
+    
+    alt, _ = bestSuccs.pop()
+    best, _ = bestSuccs.pop()
+
+    astate, aaction, acost, apath, af = alt
+    bstate, baction, bcost, bpath, bf = best
+    while True:
+        if bf > fLimit:
+            return None
+        
+        
+
+    return []
 
         
 def recursivebfs(problem, heuristic=nullHeuristic) :
     node = (problem.getStartState(), '', 0, [])
-    return rbfs(problem, node, float('inf'))
+    return rbfs(problem, node, float('inf'), heuristic)
     
 
     
