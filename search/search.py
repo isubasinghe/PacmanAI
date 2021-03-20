@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
+#
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -17,7 +17,9 @@ In search.py, you will implement generic search algorithms which are called by
 Pacman agents (in searchAgents.py).
 """
 
+import typing
 import util
+
 
 class SearchProblem:
     """
@@ -97,7 +99,8 @@ def tinyMazeSearch(problem):
     from game import Directions
     s = Directions.SOUTH
     w = Directions.WEST
-    return  [s, s, w, s, w, w, s, w]
+    return [s, s, w, s, w, w, s, w]
+
 
 def depthFirstSearch(problem):
     """
@@ -117,27 +120,30 @@ def depthFirstSearch(problem):
     startNode = (problem.getStartState(), '', 0, [])
     mystack.push(startNode)
     visited = set()
-    while mystack :
+    while mystack:
         node = mystack.pop()
         state, action, cost, path = node
-        if state not in visited :
+        if state not in visited:
             visited.add(state)
-            if problem.isGoalState(state) :
+            if problem.isGoalState(state):
                 path = path + [(state, action)]
-                break;
+                break
             succNodes = problem.expand(state)
-            for succNode in succNodes :
+            for succNode in succNodes:
                 succState, succAction, succCost = succNode
-                newNode = (succState, succAction, cost + succCost, path + [(state, action)])
+                newNode = (succState, succAction, cost +
+                           succCost, path + [(state, action)])
                 mystack.push(newNode)
     actions = [action[1] for action in path]
     del actions[0]
     return actions
 
+
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
     "*** YOUR CODE HERE ***"
     util.raiseNotDefined()
+
 
 def nullHeuristic(state, problem=None):
     """
@@ -146,8 +152,9 @@ def nullHeuristic(state, problem=None):
     """
     return 0
 
+
 def aStarSearch(problem, heuristic=nullHeuristic):
-    #COMP90054 Task 1, Implement your A Star search algorithm here
+    # COMP90054 Task 1, Implement your A Star search algorithm here
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
     current = problem.getStartState()
@@ -159,80 +166,118 @@ def aStarSearch(problem, heuristic=nullHeuristic):
 
     while not pq.isEmpty():
         state, action, cost, path = pq.pop()
-        
+
         skip = state in bestG
         if skip:
             skip = cost >= bestG[state]
-        
+
         if skip:
             continue
-        
+
         bestG[state] = cost
 
         if problem.isGoalState(state):
             path = path + [(state, action)]
             break
-        
+
         for succNode in problem.expand(state):
             succState, succAction, succCost = succNode
-            newNode = (succState, succAction, cost + succCost, path + [(state, action)])
+            newNode = (succState, succAction, cost +
+                       succCost, path + [(state, action)])
             h = heuristic(succState, problem)
             if h < float('inf'):
                 pq.push(newNode, cost + succCost + h)
-    
+
     actions = [action[1] for action in path]
     del actions[0]
     return actions
 
 
-def rbfs(problem, node, fLimit, h):
-    state, action, cost, path = node
-    if problem.isGoalState(state):
-        pass
-
-    successors = []
-    
-    bestSuccs = util.PriorityQueue()
+Path = typing.List[typing.Tuple[typing.Any, str]]
 
 
-    for succNode in problem.expand(state):
-        succState, succAction, succCost = succNode
-        f = max(cost + succCost, fLimit)
-        node = (succState, succAction, cost + succCost, path + [(state, action)], f)
-        successors.append(node)
-        if len(bestSuccs.heap) < 2:
-            bestSuccs.push(node, 1/f)
-        else:
-            item, score = bestSuccs.pop()
-            istate, iaction, icost, ipath, iscore = item
-            if iscore > f:
-                bestSuccs.push(node, 1/f)
-            else:
-                bestSuccs.push(item, 1/iscore)
-    
-    if len(successors) == 0:
-        return None
-    
-    alt, _ = bestSuccs.pop()
-    best, _ = bestSuccs.pop()
+class RBFSNode:
+    def __init__(self, state: typing.Any, action: str, cost: float, path: Path,  f: float):
+        self.state = state
+        self.action = action
+        self.cost = cost
+        self.path = path
+        self.f = f
 
-    astate, aaction, acost, apath, af = alt
-    bstate, baction, bcost, bpath, bf = best
+    def getState(self) -> typing.Any:
+        return self.state
+
+    def solution(self):
+        actions = [action[1] for action in self.path]
+        del actions[0]
+        return actions, self.f
+
+    def __str__(self):
+        return f"state={self.state}, action={self.action}, cost={self.cost}, path=${self.path}, f={self.f}"
+
+
+def rbfs(problem, node, fLimit, h, count) -> typing.Tuple[typing.Any, float]:
+    if problem.isGoalState(node.getState()):
+        print("GOT A SOLUTION")
+        return node.solution()
+
+    succ: typing.List[RBFSNode] = []
+
+    for child in problem.expand(node.getState()):
+        succState, succAction, succCost = child
+        totCosts: float = node.cost + succCost
+        f: float = max(totCosts + h(succState, problem), node.f)
+        path: Path = node.path + [(succState, succAction)]
+        node = RBFSNode(succState, succAction, totCosts, path, f)
+        succ.append(node)
+
+    if len(succ) == 0:
+        return None, float('inf')
+
     while True:
-        if bf > fLimit:
-            return None
-        
-        
+        succ.sort(key=lambda x: x.f)
+        best = succ[0]
+        if best.f > fLimit:
+            return None, best.f
+        alt: float = float('inf')
 
+        if len(succ) > 1:
+            alt = succ[1].f
+
+        result, best.f = rbfs(problem, node, min(fLimit, alt), h, count+1)
+        if result != None:
+            return result, best.f
+
+
+def recursivebfs(problem, heuristic=nullHeuristic):
+    start = problem.getStartState()
+    # node = RBFSNode(start, '', 0, [], heuristic(start, problem))
+    # retval = rbfs(problem, node, float('inf'), heuristic, 0)
+    # print('here')
+    visited = set()
+    visited.add(start)
+
+    stack = []
+    stack.append(start)
+
+    while len(stack) > 0:
+        node = stack.pop()
+
+        children = problem.expand(node)
+        for child in children:
+            succState, succAction, succCost = child
+            if succState not in visited:
+                if problem.isGoalState(succState):
+                    print("GOAL", succState)
+                stack.append(succState)
+
+        print(stack)
+        visited.add(node)
+
+    print(visited)
     return []
 
-        
-def recursivebfs(problem, heuristic=nullHeuristic) :
-    node = (problem.getStartState(), '', 0, [])
-    return rbfs(problem, node, float('inf'), heuristic)
-    
 
-    
 # Abbreviations
 bfs = breadthFirstSearch
 dfs = depthFirstSearch
