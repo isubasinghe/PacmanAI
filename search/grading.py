@@ -22,7 +22,8 @@ import traceback
 import pdb
 from collections import defaultdict
 import util
-
+import html
+cgi.escape = html.escape
 class Grades:
   "A data structure for project grades, along with formatting code to display them"
   def __init__(self, projectName, questionsAndMaxesList,

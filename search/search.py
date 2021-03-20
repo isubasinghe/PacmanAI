@@ -208,6 +208,7 @@ class RBFSNode:
         return self.state
 
     def solution(self):
+        self.path = self.path + [(self.state, self.action)]
         actions = [action[1] for action in self.path]
         del actions[0]
         return actions, self.f
@@ -216,9 +217,8 @@ class RBFSNode:
         return f"state={self.state}, action={self.action}, cost={self.cost}, path=${self.path}, f={self.f}"
 
 
-def rbfs(problem, node, fLimit, h, count) -> typing.Tuple[typing.Any, float]:
+def rbfs(problem, node, fLimit, h) -> typing.Tuple[typing.Any, float]:
     if problem.isGoalState(node.getState()):
-        print("GOT A SOLUTION")
         return node.solution()
 
     succ: typing.List[RBFSNode] = []
@@ -227,9 +227,10 @@ def rbfs(problem, node, fLimit, h, count) -> typing.Tuple[typing.Any, float]:
         succState, succAction, succCost = child
         totCosts: float = node.cost + succCost
         f: float = max(totCosts + h(succState, problem), node.f)
-        path: Path = node.path + [(succState, succAction)]
-        node = RBFSNode(succState, succAction, totCosts, path, f)
-        succ.append(node)
+        path: Path = node.path + [(node.state, node.action)]
+        childNode = RBFSNode(succState, succAction, totCosts, path, f)
+        print(childNode)
+        succ.append(childNode)
 
     if len(succ) == 0:
         return None, float('inf')
@@ -243,39 +244,17 @@ def rbfs(problem, node, fLimit, h, count) -> typing.Tuple[typing.Any, float]:
 
         if len(succ) > 1:
             alt = succ[1].f
-
-        result, best.f = rbfs(problem, node, min(fLimit, alt), h, count+1)
+        
+        result, best.f = rbfs(problem, best, min(fLimit, alt), h)
         if result != None:
             return result, best.f
 
 
 def recursivebfs(problem, heuristic=nullHeuristic):
     start = problem.getStartState()
-    # node = RBFSNode(start, '', 0, [], heuristic(start, problem))
-    # retval = rbfs(problem, node, float('inf'), heuristic, 0)
-    # print('here')
-    visited = set()
-    visited.add(start)
-
-    stack = []
-    stack.append(start)
-
-    while len(stack) > 0:
-        node = stack.pop()
-
-        children = problem.expand(node)
-        for child in children:
-            succState, succAction, succCost = child
-            if succState not in visited:
-                if problem.isGoalState(succState):
-                    print("GOAL", succState)
-                stack.append(succState)
-
-        print(stack)
-        visited.add(node)
-
-    print(visited)
-    return []
+    node = RBFSNode(start, '', 0, [], heuristic(start, problem))
+    actions, f = rbfs(problem, node, float('inf'), heuristic)
+    return actions
 
 
 # Abbreviations
