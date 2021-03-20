@@ -229,7 +229,6 @@ def rbfs(problem, node, fLimit, h) -> typing.Tuple[typing.Any, float]:
         f: float = max(totCosts + h(succState, problem), node.f)
         path: Path = node.path + [(node.state, node.action)]
         childNode = RBFSNode(succState, succAction, totCosts, path, f)
-        print(childNode)
         succ.append(childNode)
 
     if len(succ) == 0:
