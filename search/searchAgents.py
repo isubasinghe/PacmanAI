@@ -665,7 +665,8 @@ def foodHeuristic(state, problem):
     problem.heuristicInfo['wallCount']
     """
 
-    # An attempt to use MST as a heuristic for the travelling salesman problem
+    # An attempt to use MST as a heuristic for the travelling salesman problem.
+    # Idea adapted from http://www.public.asu.edu/~huanliu/AI04S/project1.htm
     # according to https://inst.eecs.berkeley.edu/~cs188/sp07/solutions/w1-sols.pdf
     # MST should be an admissable heuristic to solve the travelling salesman problem.
 
@@ -678,7 +679,6 @@ def foodHeuristic(state, problem):
     ds = DisjointSet()
 
     edges = []
-
     for i in range(len(food)):
         for j in range(len(food)):
 
@@ -691,14 +691,9 @@ def foodHeuristic(state, problem):
             edge = GraphEdge(food[i], food[j],
                              problem.heuristicInfo[(food[i], food[j], tupCaps)])
             edges.append(edge)
-
     edges.sort(key=lambda x: x.cost)
 
-    visitedCount = 0
-    i = 0
-
     closestFood = float('inf')
-
     for item in food:
         ds.make(item)
         dist = mazeDistance(
@@ -706,21 +701,12 @@ def foodHeuristic(state, problem):
         if dist < closestFood:
             closestFood = dist
 
-    mst_cost = 0
-
-    while visitedCount < len(food) - 1:
-        edge = edges[i]
-
-        a = ds.find_set(edge.start)
-        b = ds.find_set(edge.end)
-
-        if a != b:
-            visitedCount += 1
-            ds.union(a, b)
-            mst_cost += edge.cost
-        i += 1
-
-    return closestFood + mst_cost
+    cost = closestFood
+    for edge in edges:
+        if ds.find_set(edge.start) != ds.find_set(edge.end):
+            ds.union(edge.start, edge.end)
+            cost += edge.cost
+    return cost
 
 
 class ClosestDotSearchAgent(SearchAgent):
