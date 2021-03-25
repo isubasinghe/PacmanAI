@@ -681,35 +681,45 @@ def foodHeuristic(state, problem):
 
     for i in range(len(food)):
         for j in range(len(food)):
-            edge = (food[i], food[j], mazeDistance(
-                food[i], food[j], problem.startingGameState, capsules))
+
+            tupCaps = tuple(capsules)
+
+            if (food[i], food[j], tupCaps) not in problem.heuristicInfo:
+                problem.heuristicInfo[(food[i], food[j], tupCaps)] = mazeDistance(
+                    food[i], food[j], problem.startingGameState, capsules)
+
+            edge = GraphEdge(food[i], food[j],
+                             problem.heuristicInfo[(food[i], food[j], tupCaps)])
             edges.append(edge)
 
-    edges.sort(key=lambda x: x[2])
+    edges.sort(key=lambda x: x.cost)
 
     visitedCount = 0
     i = 0
 
+    closestFood = float('inf')
+
     for item in food:
         ds.make(item)
+        dist = mazeDistance(
+            position, item, problem.startingGameState, capsules)
+        if dist < closestFood:
+            closestFood = dist
 
     mst_cost = 0
 
     while visitedCount < len(food) - 1:
         edge = edges[i]
-        start, end, cost = edge
 
-        a = ds.find_set(start)
-        b = ds.find_set(end)
+        a = ds.find_set(edge.start)
+        b = ds.find_set(edge.end)
 
         if a != b:
             visitedCount += 1
             ds.union(a, b)
-            mst_cost += cost
+            mst_cost += edge.cost
         i += 1
 
-    closestFood = min(
-        [mazeDistance(position, item, problem.startingGameState, capsules) for item in food])
     return closestFood + mst_cost
 
 
