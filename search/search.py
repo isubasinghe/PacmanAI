@@ -243,7 +243,7 @@ def rbfs(problem, node, fLimit, h) -> typing.Tuple[typing.Any, float]:
 
         if len(succ) > 1:
             alt = succ[1].f
-        
+
         result, best.f = rbfs(problem, best, min(fLimit, alt), h)
         if result != None:
             return result, best.f
@@ -256,7 +256,48 @@ def recursivebfs(problem, heuristic=nullHeuristic):
     return actions
 
 
-# Abbreviations
+def capsuleAwareAStar(problem, capsules, heuristic=nullHeuristic):
+    # COMP90054 Task 1, Implement your A Star search algorithm here
+    current = problem.getStartState()
+    pq = util.PriorityQueue()
+    pq.push((current, '', 0, [], capsules), 0)
+
+    # we will reuse bestG as the closed set as well to save on memory
+    bestG = dict()
+
+    while not pq.isEmpty():
+        state, action, cost, path, caps = pq.pop()
+
+        skip = state in bestG
+        if skip:
+            skip = cost >= bestG[state]
+
+        if skip:
+            continue
+
+        bestG[state] = cost
+
+        if problem.isGoalState(state):
+            path = path + [(state, action)]
+            break
+
+        for succNode in problem.expand(state):
+            succState, succAction, succCost = succNode
+
+            newCaps = capsules.copy()
+
+            if succState in caps:
+                newCaps.remove(succState)
+                succCost = 0
+
+            newNode = (succState, succAction, cost +
+                       succCost, path + [(state, action)], newCaps)
+            h = heuristic(succState, problem)
+            if h < float('inf'):
+                pq.push(newNode, cost + succCost + h)
+    return cost
+
+    # Abbreviations
 bfs = breadthFirstSearch
 dfs = depthFirstSearch
 astar = aStarSearch
