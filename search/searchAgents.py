@@ -33,7 +33,8 @@ description for details.
 
 Good luck and happy searching!
 """
-
+import math
+import heapq
 from game import Directions
 from game import Agent
 from game import Actions
@@ -527,7 +528,7 @@ def get_distance(pos1, pos2):
     x1, y1 = pos1
     x2, y2 = pos2
     return abs(x1-x2) + abs(y1-y2)
-  
+
 def get_min(queue) :
 	cost = 9999999
 	cheapest = -1
@@ -539,20 +540,73 @@ def get_min(queue) :
 	del queue[cheapest]
 	return cheapestItem
 
+class GraphEdge:
+    def __init__(self, start, end, cost):
+        self.start = start
+        self.end = end
+        self.cost = cost
+    def __gt__(self, other):
+        return self.cost > other.cost
+    def __str__(self):
+        return f"start:{self.start}\tend:{self.end}\tcost:{self.cost}"
+
+# For Prims algorithm
+class Node:
+    def __init__(self, node):
+        self.node = node
+        self.edges: GraphEdge = []
+    def add_edge(self, edge):
+        heapq.heappush(self.edges, edge)
+    
+    # we need to pop min, this method will allow for pop min operations
+    # after two nodes have been merged into one, we essentially have to 
+    # perform a set union while preserving the ordering of the min heap, this is why we use a heapq.merge
+    def merge(self, other):
+        self.edges = heapq.merge(self.edges, other.edges)
+    
+
+# For Kruskal's algorithm
+class DisjointSet:
+    def __init__(self):
+        self.parent = {}
+        self.rank = {}
+    
+    def make(self, n):
+        self.parent[n] = None
+        self.rank[n] = 0
+    
+    def find_set(self, n):
+        
+        if self.parent[n] == None:
+            return n
+        
+        return self.find_set(self.parent[n])
+    
+    def union(self, a, b):
+        a = self.find_set(a)
+        b = self.find_set(b)
+        if self.rank[a] < self.rank[b]:
+            self.parent[a] = b
+
+        elif self.rank[a] > self.rank[b]:
+            self.parent[b] = a
+        else:
+            self.parent[b] = a
+            self.rank[a] += 1
+    
 def foodHeuristic(state, problem):
-    """
-    Your heuristic for the FoodSearchProblem goes here.
-
+    """Your heuristic for the FoodSearchProblem goes here.
     This heuristic must be admissible to ensure correctness.
-
-    The state is a tuple ( pacmanPosition, foodGrid, capsules) where foodGrid is a Grid
+    If using A* ever finds a solution that is worse uniform cost
+    search finds, your heuristic is *not* admissible!  On the other
+    hand, inadmissible heuristics may occasionally find optimal
+    solutions, so be careful.
+    The state is a tuple ( pacmanPosition, foodGrid ) where foodGrid is a Grid
     (see game.py) of either True or False. You can call foodGrid.asList() to get
-    a list of food coordinates instead.  capsules contains a tuple of capsule locations.
-
-    If you want access to info like walls, etc., you can query the
+    a list of food coordinates instead.
+    If you want access to info like walls, capsules, etc., you can query the
     problem.  For example, problem.walls gives you a Grid of where the walls
     are.
-
     If you want to *store* information to be reused in other calls to the
     heuristic, there is a dictionary called problem.heuristicInfo that you can
     use. For example, if you only want to count the walls once and store that
@@ -560,10 +614,56 @@ def foodHeuristic(state, problem):
     Subsequent calls to this heuristic can access
     problem.heuristicInfo['wallCount']
     """
+
+    # An attempt to use MST as a heuristic for the travelling salesman problem
+    # according to https://inst.eecs.berkeley.edu/~cs188/sp07/solutions/w1-sols.pdf
+    # MST should be an admissable heuristic to solve the travelling salesman problem. 
+
     position, foodGrid, capsules = state
-    #COMP90054 Task 3, Implement your code here
-    "*** YOUR CODE HERE ***"
-    return 0
+    food = foodGrid.asList()
+
+    if len(food) == 0:
+        return 0
+    
+    ds = DisjointSet()
+
+    closestFood = float('inf')
+
+    for item in food:
+        ds.make(item)
+        closestFood = min(closestFood, util.manhattanDistance(position, item))
+    
+    edges = []
+    for i in range(len(food)):
+        for j in range(len(food)):
+            if i != j:
+                cost = mazeDistance(food[i], food[j], problem.startingGameState)
+                edge = GraphEdge(food[i], food[j], cost)
+                edges.append(edge)
+    
+    edges.sort(key=lambda x: x.cost)
+
+    visitedCount = 0
+
+    cost = 0
+
+    i = 0
+
+    # Kruskal's algorithm
+    while visitedCount < len(food) - 1:
+        edge = edges[i]
+        i += 1
+
+        a = ds.find_set(edge.start)
+        b = ds.find_set(edge.end)
+
+        if a != b:
+            visitedCount += 1
+            cost += edge.cost
+            ds.union(a, b)
+    
+    return  0
+                
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
@@ -648,5 +748,5 @@ def mazeDistance(point1, point2, gameState):
     assert not walls[x1][y1], 'point1 is a wall: ' + str(point1)
     assert not walls[x2][y2], 'point2 is a wall: ' + str(point2)
     prob = PositionSearchProblem(gameState, start=point1, goal=point2, warn=False, visualize=False)
-    return len(search.bfs(prob))
+    return len(search.dfs(prob))
 
