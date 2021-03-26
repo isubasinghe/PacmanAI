@@ -145,12 +145,76 @@ class SearchAgent(Agent):
             return Directions.STOP
 
 
+class DeceptiveSearchAgentpi1(SearchAgent):
+    "Search for all food using a sequence of searches"
+
+    def registerInitialState(self, state):
+        # COMP90054 Task 4 - Implement your deceptive search algorithm here
+        if self.searchFunction == None:
+            raise Exception("No search function provided")
+        startTime = time.time()
+        gfs = state.getCapsules()
+        grs = state.getFood().asList()
+
+        assert len(gfs) >= 1
+        assert len(grs) == 1
+
+        gr = grs[0]
+
+        gmin = None
+        gminCost = float('inf')
+
+        for g in gfs:
+            cost = (mazeDistance(gr, g, state) + mazeDistance(state.getPacmanState().getPosition(),
+                                                              gr, state) - mazeDistance(state.getPacmanState().getPosition(), g, state))/2
+            if cost < gminCost:
+                gminCost = cost
+                gmin = g
+
+        problem = PositionSearchProblem(
+            state, goal=gmin, start=state.getPacmanPosition(), visualize=True)
+
+        actions = search.astar(problem)  # Find a path
+        totalCost = problem.getCostOfActionSequence(actions)
+
+        problem2 = PositionSearchProblem(
+            state, goal=gr, start=gmin, visualize=False)
+
+        actions2 = search.astar(problem2)
+        actions = actions + actions2
+        print(actions)
+        self.actions = actions
+
+        return self.actions
+
+
 class DeceptiveSearchAgentpi2(SearchAgent):
     "Search for all food using a sequence of searches"
 
     def registerInitialState(self, state):
         # COMP90054 Task 4 - Implement your deceptive search algorithm here
-        util.raiseNotDefined()
+        if self.searchFunction == None:
+            raise Exception("No search function provided")
+
+        gfs = state.getCapsules()
+        grs = state.getFood().asList()
+
+        assert len(gfs) >= 1
+        assert len(grs) == 1
+
+        gr = grs[0]
+
+        bmin = float('inf')
+
+        for g in gfs:
+            b = (mazeDistance(gr, g, state) + mazeDistance(state.getPacmanPosition(),
+                                                           gr, state) + mazeDistance(state.getPacmanPosition(), g, state))/2
+            if b < bmin:
+                bmin = b
+
+        self.actions = []
+
+        return self.actions
 
 
 class DeceptiveSearchAgentpi3(SearchAgent):
