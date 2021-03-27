@@ -238,7 +238,61 @@ class DeceptiveSearchAgentpi3(SearchAgent):
 
     def registerInitialState(self, state):
         # COMP90054 Task 4 - Implement your deceptive search algorithm here
-        util.raiseNotDefined()
+        
+        if self.searchFunction == None:
+            raise Exception("No search function found")
+
+        gfs = state.getCapsules()
+        grs = state.getFood().asList()
+
+        gr = grs[0]
+        gmin = None
+        bmin = float('inf')
+
+        for g in gfs:
+            cost = (mazeDistance(gr, g, state) + mazeDistance(state.getPacmanState().getPosition(),
+                                                              gr, state) - mazeDistance(state.getPacmanState().getPosition(), g, state))/2
+            if cost < bmin:
+                bmin = cost
+                gmin = g
+        
+        problem1 = PositionSearchProblem(state, goal=gmin, start=gr, warn=False)
+        actions1 = search.astar(problem1)
+        
+        currState = gr
+        
+        t = None
+        for action in actions1:
+            currState = problem1.getNextState(currState, action)
+            costTGr = mazeDistance(currState, gr, state)
+            if costTGr <= bmin:    
+                t = currState
+
+        def h(n, problem):
+            hngr = util.manhattanDistance(n, gr)
+            hngmin = util.manhattanDistance(n, gmin)
+            
+            alpha = 1
+            if hngr < hngmin:
+                alpha = 2
+
+            return alpha * util.manhattanDistance(n, t)
+
+        
+        problem2 = PositionSearchProblem(state, goal=t, start=state.getPacmanPosition(), warn=False)
+        actions2 = search.astar(problem2, heuristic=h)
+
+        problem3 = PositionSearchProblem(state, goal=gr, start=t, warn=False)
+        actions3 = search.astar(problem3)
+
+        self.actions = actions2 + actions3
+        return self.actions
+
+
+
+
+
+
 
 
 class PositionSearchProblem(search.SearchProblem):
