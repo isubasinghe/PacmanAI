@@ -214,11 +214,9 @@ class DeceptiveSearchAgentpi2(SearchAgent):
         problem1 = PositionSearchProblem(state, goal=gmin, start=gr, warn=False)
         actions1 = search.astar(problem1)
         
-        nodes = []
         currState = gr
         
         t = None
-
         for action in actions1:
             currState = problem1.getNextState(currState, action)
             costTGr = mazeDistance(currState, gr, state)
